@@ -9,6 +9,8 @@ import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Component;
 
 import com.app.ordermanagement.exception.ExecutionQuantityExceedsTotalDemand;
 import com.app.ordermanagement.exception.OrderBookOpenException;
@@ -20,6 +22,9 @@ import com.app.ordermanagement.util.OrderType;
  * @author ajaysharma
  *
  */
+
+@Component
+@Scope("prototype")
 public class OrderBook {
 
 	Logger log = LoggerFactory.getLogger(OrderBook.class);
