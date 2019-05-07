@@ -31,8 +31,13 @@ Following are the list of validations added to the service.
 6. Executions cannot be submitted if enitre order demand is executed.
 7. Executions are distributed evenly across orders. 
 
+## TESTING ##
+Please refer TestCasesUsingPostmanClient_pdf.pdf, it covers testing of all the rest end points and different
+validation scenarios.
+
 ## To Do Features ##
-1. Better test coverage.
+1. Better unit test coverage.
+2. Service to print statistics/matrix.
 2. Persisting data to database.
 3. Horizontal scaling of application to accomodate hight load.
 
