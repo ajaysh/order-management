@@ -17,4 +17,6 @@ public class BeanConfigurations {
         Map<String, OrderBook> map = new HashMap<String,OrderBook>();
         return map;
     }
+	
+	 
 }

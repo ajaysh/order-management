@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.springframework.stereotype.Component;
 
@@ -12,6 +13,7 @@ import com.app.ordermanagement.exception.OrderBookNotFoundException;
 import com.app.ordermanagement.exception.OrderDoesNotExist;
 import com.app.ordermanagement.model.Order;
 import com.app.ordermanagement.model.OrderBook;
+import com.app.ordermanagement.util.OrderBookStatus;
 
 @Component
 public class OrderBookHelper {
@@ -33,11 +35,14 @@ public class OrderBookHelper {
 		if(orderBook == null) {
 			throw new OrderBookNotFoundException("Order book for instrument id"+instrumentid+" doesn't exist!");
 		}
-		if(!orderBook.isOpen()) {
+		
+		if(orderBook.getStatus().equals(OrderBookStatus.CLOSED)) {
 			throw new OrderBookClosedException("Cannot add Orders book because order book is closed!");
 		}
 		return true;
 	}
+	
+	public void setOrderid(Map<String, OrderBook> orderBookMap,String instrumentid) {}
 	
 	public boolean doesOrderBookExist(Map<String, OrderBook> orderBookMap,String instrumentid) {
 		OrderBook orderBook = orderBookMap.get(instrumentid);
@@ -54,10 +59,26 @@ public class OrderBookHelper {
 			throw new OrderBookNotFoundException("Order book for instrument id"+instrumentid+" doesn't exist");
 		}
 
-		Order order = orderBook.getOrderDetails(orderid);
+		Order order = this.getOrderDetails(orderBook,orderid);
 		if(order == null) {
 			throw new OrderDoesNotExist("Order with orderid:"+orderid+" does not exist!");
 		}
 		return order;
+	}
+
+
+	public Order getOrderDetails(OrderBook orderBook , int orderid) {
+		Optional<Order> result  = orderBook.getValidOrders().stream().
+											filter(o -> (o.getOrderid()==orderid)).
+										    findFirst();
+		if(!result.isPresent()) {
+			result  = orderBook.getInValidOrders().stream().
+								filter(o -> (o.getOrderid()==orderid)).
+								findFirst();	
+			if(!result.isPresent()) {
+				return null;
+			}
+		}
+		return result.get();
 	}
 }

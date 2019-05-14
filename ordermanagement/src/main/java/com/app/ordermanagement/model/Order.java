@@ -1,4 +1,6 @@
 package com.app.ordermanagement.model;
+import java.time.LocalDateTime;
+
 /**
  * Class to hold Order request. Order request consist of order quantity,order price for given 
  * financial instrument.
@@ -6,93 +8,71 @@ package com.app.ordermanagement.model;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.app.ordermanagement.util.OrderStatus;
 import com.app.ordermanagement.util.OrderType;
-
-public class Order {
+import com.fasterxml.jackson.annotation.JsonFormat;
+/**
+ * Immutable Order class containing order id, Order Quantity,Price,Entry Date and Order Type information.
+ * @author ajaysharma
+ *
+ */
+public final class Order {
 
 	Logger log = LoggerFactory.getLogger(Order.class);
 	
-	private int orderid;
-	private long orderQuantity;
-	private Long price;
-	private OrderType orderType = OrderType.MARKET_ORDERS;   
-	private long executedQuantity;
-	private boolean completed = false;
+	private final int orderid;
+	private final long orderQuantity;
+	private final OrderType orderType;   
+
 	
-	public Order(int orderid,int orderQuantity,Long price) {
+	@JsonFormat(pattern = "yyyy-MM-dd HH:mm") //e.g   "entryDate": "2017-01-01 20:00"
+	private final LocalDateTime entryDate;
+	private final Long price;
+	private final long executedQuantity;
+	private final OrderStatus orderStatus;
+	
+	public Order(int orderid, long orderQuantity, OrderType orderType, LocalDateTime entryDate, Long price, 
+				long executedQuantity, OrderStatus orderStatus) {
 		super();
-		this.orderQuantity = orderQuantity;
-		this.price = price;
 		this.orderid = orderid;
-		if(price != null) {
-			orderType = OrderType.LIMIT;	
-		}
+		this.orderQuantity = orderQuantity;
+		this.orderType = orderType;
+		this.entryDate = entryDate;
+		this.price = price;
+		this.executedQuantity = executedQuantity;
+		this.orderStatus = orderStatus;
 	}
 
-	public Order() {
-		super();
-	}
-	
-
-	@Override
-	public String toString() {
-		return "Order [log=" + log + ", orderid=" + orderid + ", orderQuantity=" + orderQuantity + ", price=" + price
-				+ ", orderType=" + orderType + ", executedQuantity=" + executedQuantity + ", completed=" + completed
-				+ "]";
+	public LocalDateTime getEntryDate() {
+		return entryDate;
 	}
 
 	public int getOrderid() {
 		return orderid;
 	}
 
-	public void setOrderid(int orderid) {
-		this.orderid = orderid;
-	}
-
-	public boolean isCompleted() {
-		return completed;
-	}
-
-	public void setCompleted(boolean completed) {
-		this.completed = completed;
-	}
 
 	public long getOrderQuantity() {
 		return orderQuantity;
 	}
 	
-	public void setOrderQuantity(long orderQuantity) {
-		this.orderQuantity = orderQuantity;
-	}
-
 	public Long getPrice() {
 		return price;
-	}
-	
-	public void setPrice(Long price) {
-		this.price = price;
-		this.orderType = OrderType.MARKET_ORDERS;
 	}
 	
 	public OrderType getOrderType() {
 		return orderType;
 	}
-	public void setOrderType() {
-		if(this.price != null)
-			this.orderType = OrderType.LIMIT;
-		else
-			this.orderType = OrderType.MARKET_ORDERS;
-	}
 	
-
 	public long getExecutedQuantity() {
 		return executedQuantity;
 	}
 
-	public void setExecutedQuantity(long executedQuantity) {
-		this.executedQuantity = executedQuantity;
+	public OrderStatus getOrderStatus() {
+		return orderStatus;
 	}
 
+	
 	/**
 	 * add to executedQuantity and remove from orderQuantity
 	 * Mark order as completed if order quantity is zero.
@@ -100,12 +80,18 @@ public class Order {
 	 * @return
 	 */
 	public  Order execute(long executeQuantity) {
-		executedQuantity += executeQuantity;
-		orderQuantity    -= executeQuantity;
-		if(orderQuantity == 0) {
-			completed = true;
+		
+		long newExecutedQuantity = this.executedQuantity + executeQuantity;
+		long newOrderQuantity = this.orderQuantity - executeQuantity;
+		OrderStatus newOrderStatus;
+		if(newOrderQuantity == 0) {
+			newOrderStatus = OrderStatus.EXECUTED;
+		}else{
+			newOrderStatus = OrderStatus.PARTIALLY_EXECUTED;
 		}
-		return this;
+		
+		return new Order(this.orderid, newOrderQuantity, this.orderType, this.entryDate, this.price, 
+				 newExecutedQuantity,  newOrderStatus);
 	}
 	
 	@Override

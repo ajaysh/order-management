@@ -2,7 +2,9 @@ package com.app.ordermanagement.model;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -15,6 +17,8 @@ import org.springframework.stereotype.Component;
 import com.app.ordermanagement.exception.ExecutionQuantityExceedsTotalDemand;
 import com.app.ordermanagement.exception.OrderBookOpenException;
 import com.app.ordermanagement.exception.WrongExecutionPriceException;
+import com.app.ordermanagement.util.OrderBookStatus;
+import com.app.ordermanagement.util.OrderStatus;
 import com.app.ordermanagement.util.OrderType;
 
 /**
@@ -28,15 +32,36 @@ import com.app.ordermanagement.util.OrderType;
 public class OrderBook {
 
 	Logger log = LoggerFactory.getLogger(OrderBook.class);
+
 	private String isinNumber;
-	private boolean open;
+	private OrderBookStatus status = OrderBookStatus.OPEN;  
 	private long executionPrice = -1;
 	private List<Order> validOrders = new ArrayList<Order>(50);
+
 	private List<Order> inValidOrders = new ArrayList<Order>(50);
-	private List<Execution> executions = new ArrayList<Execution>(10);
+	private List<Execution> listOfExecutions = new ArrayList<Execution>(10);
+	private boolean validated = false;
+
+	public OrderBook() {
+		super();
+	}
 	
+
+	public boolean isValidated() {
+		return validated;
+	}
+
+
+	public void setValidated(boolean validated) {
+		this.validated = validated;
+	}
+
+	public void removeInvalidOrders() {
+		validOrders.removeIf(o-> inValidOrders.contains(o));
+	}
+
 	public List<Execution> getExecutions() {
-		return executions;
+		return listOfExecutions;
 	}
 
 	public List<Order> getValidOrders() {
@@ -47,16 +72,10 @@ public class OrderBook {
 		return inValidOrders;
 	}
 
-	public OrderBook() {
-		super();
-	}
-	
 	public OrderBook(String isinNumber) {
 		super();
 		this.isinNumber = isinNumber;
-		this.open = true;
 	}
-
 
 	public String getIsinNumber() {
 		return isinNumber;
@@ -64,14 +83,6 @@ public class OrderBook {
 	
 	public void setIsinNumber(String isinNumber) {
 		this.isinNumber = isinNumber;
-	}
-	
-	public boolean isOpen() {
-		return open;
-	}
-	
-	public void setOpen(boolean open) {
-		this.open = open;
 	}
 	
 	public long getExecutionPrice() {
@@ -82,111 +93,21 @@ public class OrderBook {
 		this.executionPrice = executionPrice;
 	}
 
-	/**
-	 * validate orders and segregate into valid/invalid orders, based on execution price.
-	 * @param execution
-	 */
-	private void validate(Execution execution) {
-		// Check if order book is closed.
-		if(this.isOpen()) {
-			throw new OrderBookOpenException("Cannot Execute open order book.");
-		}
-
-		//subsequent execution prices should match.
-		if(this.executionPrice >= 0 && this.executionPrice != execution.getExecutionPrice()) {
-			throw new WrongExecutionPriceException("Execution price cannot be:"+execution.getExecutionPrice()+", it should"
-					+ " be:"+this.executionPrice);
-		}
-
-		log.info("Validating Orders.");
-		if(this.getExecutionPrice() > 0) { 
-			log.info("orders already executed and validated once.");
-			return;
-		}
-		
-		Predicate<Order> limitOrders =a -> (a.getOrderType().equals(OrderType.LIMIT)); 
-//		Predicate<Order> marketOrders =a -> (a.getOrderType().equals(OrderType.MARKET_ORDERS)); 
-//		Predicate<Order> aboveExecutionPrice = a -> (a.getPrice() >= execution.getExecutionPrice());
-		Predicate<Order> belowExectutionPrice = a -> (a.getPrice() < execution.getExecutionPrice());
-
-		inValidOrders = validOrders.stream().filter(limitOrders.and(belowExectutionPrice)).collect(Collectors.toList());
-		validOrders.removeIf(o-> inValidOrders.contains(o));
-		//validOrders = validOrders.stream().filter(marketOrders.or(aboveExecutionPrice)).collect(Collectors.toList());
-		
-		log.info("Valid orders after validation");
-		validOrders.forEach(System.out::println);
-
-		log.info("Invalid Orders after validation");
-		inValidOrders.forEach(System.out::println);
-	}
-	
-	private void setExecutionPrice(Execution execution) {
-		this.executionPrice = execution.getExecutionPrice(); // set execution price.
+	public OrderBookStatus getStatus() {
+		return status;
 	}
 
-	private void execute(Execution execution) {
-		long executionPerOrder = 1;
-		long totaldemand = validOrders.stream().filter(o-> (o.isCompleted() == false)).mapToLong(o-> o.getOrderQuantity()).sum();
-		
-		log.info("Total demand: "+totaldemand);
-		
-		if(execution.getExecutionQuantity() > totaldemand) {
-			throw new ExecutionQuantityExceedsTotalDemand("Execution quantity "+execution.getExecutionQuantity()+" exceeds total demand "+totaldemand);
-		}
-		while(execution.getExecutionQuantity() != 0) {
-
-			long numberOfValidOpenOrders =
-				     validOrders.stream().filter(o -> (o.isCompleted()==false)).count();
-			
-			log.info("Number of valid orders in order book:"+numberOfValidOpenOrders);
-			if(execution.getExecutionQuantity() >= numberOfValidOpenOrders) {
-				log.info("1 quantity/order executed for orders(count):"+numberOfValidOpenOrders);
-				//executionPerOrder = execution.getExecutionQuantity() % numberOfValidOpenOrders;
-				validOrders.stream().filter(o -> (o.isCompleted()==false)).
-				 					 map(a -> a.execute(executionPerOrder)).
-				 					 collect(Collectors.toList());
-				execution.setExecutionQuantity(execution.getExecutionQuantity() - numberOfValidOpenOrders);
-				
-			}else {
-				log.info("Applying Lucky Draw system.");
-				//lottery system where execution quantity is less than valid open orders.
-				Collections.shuffle(validOrders);
-				log.info("1 quantity/order executed for order count:"+execution.getExecutionQuantity()+" out of total orders:"+numberOfValidOpenOrders+" using lottery");
-				validOrders.stream().filter(o -> (o.isCompleted()==false)).
-									limit(execution.getExecutionQuantity()).
-									map(a -> a.execute(executionPerOrder)).
-									collect(Collectors.toList());
-				
-				execution.setExecutionQuantity(0);
-				
-			}
-		}
-		
+	public void setValidOrders(List<Order> validOrders) {
+		this.validOrders = validOrders;
 	}
 
-	/**
-	 * Three steps execution process. 1. validate. 2. set price. 3. execute
-	 * @param execution
-	 */
-	public void processExecution(Execution execution) {
-		this.validate(execution);
-		this.setExecutionPrice(execution);
-		this.execute(execution);
+
+	public void setInValidOrders(List<Order> inValidOrders) {
+		this.inValidOrders = inValidOrders;
 	}
 
-	public Order getOrderDetails(int orderid) {
-		Optional<Order> result  = validOrders.stream().
-											 filter(o -> (o.getOrderid()==orderid)).
-											 findFirst();
-		if(!result.isPresent()) {
-			result  = inValidOrders.stream().
-									filter(o -> (o.getOrderid()==orderid)).
-									findFirst();	
-			if(!result.isPresent()) {
-				return null;
-			}
-		}
-		return result.get();
+	public void setStatus(OrderBookStatus status) {
+		this.status = status;
 	}
 	
 }

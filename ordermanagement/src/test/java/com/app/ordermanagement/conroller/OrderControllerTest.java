@@ -4,8 +4,8 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
-import org.skyscreamer.jsonassert.JSONAssert;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
@@ -17,7 +17,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import com.app.ordermanagement.controller.OrderController;
 import com.app.ordermanagement.model.OrderBook;
-import com.app.ordermanagement.service.OrderBookService;
+import com.app.ordermanagement.service.impl.OrderBookServiceImpl;
 
 
 @RunWith(SpringRunner.class)
@@ -28,7 +28,8 @@ public class OrderControllerTest {
 	private MockMvc mockMvc;
 
 	@MockBean
-	private OrderBookService orderBookService;
+	@Qualifier("OrderBookServiceImpl")
+	private OrderBookServiceImpl orderBookService;
 	
 	OrderBook mockOrderBook = new OrderBook("test");
 	
@@ -37,7 +38,7 @@ public class OrderControllerTest {
 		
 		Mockito.when(
 				orderBookService.createOrderBook(Mockito.anyString()
-						)).thenReturn(mockOrderBook);
+						)).thenReturn("Order Book created!");
 
 		RequestBuilder requestBuilder = MockMvcRequestBuilders.get(
 				"/orderbook/test").accept(
@@ -57,7 +58,7 @@ public class OrderControllerTest {
 		
 		Mockito.when(
 				orderBookService.closeOrderBook(Mockito.anyString()
-						)).thenReturn(mockOrderBook);
+						)).thenReturn("Order Book closed.");
 
 		RequestBuilder requestBuilder = MockMvcRequestBuilders.get(
 				"/orderbook/test/close").accept(
