@@ -57,16 +57,16 @@ public class StatisticsGenerator {
 		attributesMap.put("InvalidDemand", inValidOrdersDemand);
 		
 		//5.Smallest Order
-		Order minQuantityOrder = orderBook.getValidOrders().stream().min(Comparator.comparing(Order::getOrderQuantity)).orElseThrow(NoSuchElementException::new);
+		Order minQuantityOrder = orderBook.getValidOrders().stream().min(Comparator.comparing(Order::getOrderQuantity)).orElse(null);
 		attributesMap.put("SmallestOrder", minQuantityOrder);
 		
 		
 		//6. Largest Order
-		Order maxQuantityOrder = orderBook.getValidOrders().stream().max(Comparator.comparing(Order::getOrderQuantity)).orElseThrow(NoSuchElementException::new);
+		Order maxQuantityOrder = orderBook.getValidOrders().stream().max(Comparator.comparing(Order::getOrderQuantity)).orElse(null);
 		attributesMap.put("LargestOrder", maxQuantityOrder);
 
 		//7. ExecutionPrice
-		attributesMap.put("LargestOrder", orderBook.getExecutionPrice());
+		attributesMap.put("ExecutionPrice", orderBook.getExecutionPrice());
 
 		//8. AccumulatedExecution
 		long accumulatedExecution = orderBook.getValidOrders().stream().mapToLong(o-> o.getExecutedQuantity()).sum();

@@ -114,9 +114,17 @@ public class OrderBookProcessor {
 //									collect(Collectors.toList());
 				
 				execution.setExecutionQuantity(0);
-				orderbook.setStatus(OrderBookStatus.EXECUTED);
+				orderbook.setStatus(OrderBookStatus.PARTIALLY_EXECUTED);
 				
 			}
+		}
+		
+		//Check if demand is zero
+		totaldemand = orderbook.getValidOrders().stream().
+				filter(o-> (o.getOrderStatus().equals(OrderStatus.OPEN) || o.getOrderStatus().equals(OrderStatus.PARTIALLY_EXECUTED))).
+				mapToLong(o-> o.getOrderQuantity()).sum();
+		if(totaldemand == 0) {
+			orderbook.setStatus(OrderBookStatus.EXECUTED);
 		}
 		
 	}

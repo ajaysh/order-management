@@ -46,7 +46,6 @@ public class OrderControllerTest {
 
 		MvcResult result = mockMvc.perform(requestBuilder).andReturn();
 
-		System.out.println(result.getResponse().getContentAsString());
 		String expected = "Order book created successsfully!";
 		
 		Assert.assertEquals("Order book creation failed",result.getResponse().getContentAsString(),expected);
@@ -66,7 +65,6 @@ public class OrderControllerTest {
 
 		MvcResult result = mockMvc.perform(requestBuilder).andReturn();
 
-		System.out.println(result.getResponse().getContentAsString());
 		String expected = "Order book closed!";
 		
 		Assert.assertEquals("Order book close failed",result.getResponse().getContentAsString(),expected);

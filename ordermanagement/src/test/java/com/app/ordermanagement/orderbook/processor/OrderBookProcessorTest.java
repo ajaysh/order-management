@@ -252,6 +252,10 @@ public class OrderBookProcessorTest {
 	
 	@After
 	public void afterTestCase() {
+		orderBookProcessor = new OrderBookProcessor();
+		orderbook = new OrderBook();
+		execution = new Execution();
+
 	}
 
 }
