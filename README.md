@@ -9,7 +9,8 @@ uses in-memory data store.
 3. Add order to order boook. -> POST http://localhost:8080/orderbook/{instrumentid}/createOrder
 	                              REQUEST BODY: {
                                               "orderQuantity": "10",
-                                              "price": "200"
+                                              "price": "200",
+                                              "entryDate": "2019-05-10 21:00"
 	                                            }
 4. Get orders list. -> GET http://localhost:8080/orderbook/{instrumentid}/getOrders
 5. Get order details. -> GET http://localhost:8080/orderbook/{instrumentid}/getOrderDetails/{orderid}
@@ -19,6 +20,7 @@ uses in-memory data store.
                                              "executionPrice":200
 	                                            }
 
+7. Get Statistics -> GET http://localhost:8080/getStatistics
 ```
 
 ## Validations ##
@@ -32,7 +34,9 @@ Following are the list of validations added to the service.
 7. Executions are distributed evenly across orders. 
 
 ## TESTING ##
-Please refer TestCasesUsingPostmanClient_pdf.pdf, it covers testing of all the rest end points and different
+```
+1. JUnit Testcases can be found in : com.app.ordermanagement.testsuite.AllTests.java
+2. Please refer TestCasesUsingPostmanClient_pdf.pdf, it covers testing of all the rest end points and different
 validation scenarios.
 
 ## To Do Features ##
