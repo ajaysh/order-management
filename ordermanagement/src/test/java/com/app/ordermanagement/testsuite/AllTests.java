@@ -1,4 +1,4 @@
-package com.app.ordermanagement.conroller.service;
+package com.app.ordermanagement.testsuite;
 
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
